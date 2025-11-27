@@ -28,8 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
@@ -40,21 +39,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        jwt = authHeader.substring(7); // Remove o "Bearer "
-        userEmail = tokenService.extractUsername(jwt);
+        try {
+            jwt = authHeader.substring(7); // Remove o "Bearer "
+            System.out.println("DEBUG: Token extraído: " + jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            userEmail = tokenService.extractUsername(jwt);
+            System.out.println("DEBUG: Email extraído: " + userEmail);
 
-            if (tokenService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                System.out.println("DEBUG: UserDetails carregado: " + userDetails.getUsername());
+
+                if (tokenService.isTokenValid(jwt, userDetails)) {
+                    System.out.println("DEBUG: Token VÁLIDO");
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    System.out.println("DEBUG: Token INVÁLIDO para o usuário " + userDetails.getUsername());
+                }
             }
+        } catch (Exception e) {
+            // Se o token for inválido, expirado ou malformado, apenas ignoramos.
+            // O usuário seguirá como "não autenticado".
+            // Se ele tentar acessar rota protegida, o Spring Security barrará depois (403).
+            // Se for rota pública (login), passará normalmente.
+            System.out.println("Erro ao validar token: " + e.getMessage());
+            e.printStackTrace();
         }
         filterChain.doFilter(request, response);
     }

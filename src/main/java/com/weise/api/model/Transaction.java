@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.weise.api.model.Category;
 
 @Data
 @NoArgsConstructor
@@ -35,6 +36,10 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType type; // INCOME ou EXPENSE
+
+    @ManyToOne
+    @JoinColumn(name = "category_id") // Pode ser nullable=true por enquanto para evitar erros
+    private Category category;
 
     // Muitas transações pertencem a UM usuário
     @ManyToOne(fetch = FetchType.LAZY)

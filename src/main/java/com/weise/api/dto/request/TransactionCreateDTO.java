@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record TransactionCreateDTO(
         @NotBlank(message = "Descrição é obrigatória")
@@ -20,5 +21,8 @@ public record TransactionCreateDTO(
         LocalDate date,
 
         @NotNull(message = "Tipo é obrigatório (INCOME ou EXPENSE)")
-        TransactionType type
+        TransactionType type,
+
+        @NotNull(message = "A categoria é obrigatória")
+        UUID categoryId
 ) {}
